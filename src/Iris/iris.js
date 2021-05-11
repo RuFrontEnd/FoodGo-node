@@ -144,20 +144,43 @@ router.post("/deleteMyFav", (req, res) => {
 });
 
 // ---------- 會員註冊 ---------- //
-router.post("/userRegister", (req, res) => {
+router.post("/userRegister", async (req, res) => {
   const newRegister = req.body;
-  const sql =
-    "INSERT INTO `member_list`( `account`, `password`,`mobile`, `email`) VALUES ('" +
-    newRegister.account +
-    "','" +
-    newRegister.password +
-    "','" +
-    newRegister.mobile +
-    "','" +
-    newRegister.email +
-    "')";
-  db.query(sql);
-  res.json(newRegister);
+  let unPassTimes = 0;
+
+  await db.query("SELECT * FROM member_list").then((res) => {
+    let comparisons = [];
+    res[0].forEach((row) => {
+      const _comparisons = {
+        account: row.account,
+      };
+      comparisons.push(_comparisons);
+    });
+
+    comparisons.forEach((comparison) => {
+      unPassTimes += comparison.account === newRegister.account ? 1 : 0;
+    });
+
+    if (unPassTimes === 0) {
+      const sql =
+        "INSERT INTO `member_list`( `account`, `password`,`mobile`, `email`) VALUES ('" +
+        newRegister.account +
+        "','" +
+        newRegister.password +
+        "','" +
+        newRegister.mobile +
+        "','" +
+        newRegister.email +
+        "')";
+      db.query(sql);
+    }
+  });
+
+  if (unPassTimes === 0) {
+    res.json(newRegister);
+  } else {
+    res.json({ message: "註冊失敗" });
+  }
 });
 
 // ---------- 更新會員資料 ---------- //
