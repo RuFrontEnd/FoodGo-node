@@ -2,6 +2,7 @@
 const express = require("express");
 const db = require(__dirname + "/../db_connect");
 const session = require("express-session");
+const jwt = require("jsonwebtoken");
 
 //引入router
 const router = express.Router();
@@ -180,6 +181,87 @@ router.post("/userRegister", async (req, res) => {
     res.json(newRegister);
   } else {
     res.json({ message: "註冊失敗" });
+  }
+});
+
+// ---------- 會員登入後的token是否存在 ---------- //
+
+// router.get("/isUserAuth", (req, res) => {
+//   const token = req.headers["x-access-token"];
+//   if (!token) {
+//     res.send("need token");
+//   }
+//   if (token) {
+//     jwt.verify(token, process.env.SECRET, (err, decoded) => {
+//       if (err) {
+//         res.json({
+//           status: false,
+//           message: "登入失敗",
+//         });
+//       }else{
+//         req.userId = decoded.id
+//         next()
+//       }
+//     });
+//   }
+// });
+
+// ---------- 會員登入 ---------- //
+router.post("/login", async (req, res) => {
+  const profile = req.body;
+  let isRegistered = false;
+  let memberSid = 0;
+
+  await db.query("SELECT * FROM member_list").then((res) => {
+    let comparisons = [];
+
+    res[0].forEach((row) => {
+      const _comparisons = {
+        member_sid: row.member_sid,
+        account: row.account,
+        password: row.password,
+      };
+      comparisons.push(_comparisons);
+    });
+
+    const _isRegistered = comparisons.some(
+      (comparison) =>
+        comparison.account === profile.account &&
+        comparison.password === profile.password
+    );
+
+    const _memberSid = comparisons.filter(
+      (comparison) =>
+        comparison.account === profile.account &&
+        comparison.password === profile.password
+    );
+
+    isRegistered = _isRegistered;
+    memberSid = _memberSid[0].member_sid;
+  });
+
+  if (isRegistered) {
+    const token = jwt.sign(
+      {
+        algorithm: "HS256", // 加密演算方式
+        exp: Math.floor(Date.now() / 1000) + 60, // token存活時間(一分鐘)
+        data: memberSid, // 會員id
+      },
+      process.env.SECRET
+    );
+    res.json({
+      status: true,
+      message: "登入成功",
+      currentUser: memberSid,
+      accessToken: token,
+    });
+  }
+
+  if (!isRegistered) {
+    res.json({
+      status: false,
+      message: "登入失敗",
+    });
   }
 });
 
