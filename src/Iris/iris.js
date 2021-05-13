@@ -212,24 +212,47 @@ router.post("/userRegister", async (req, res) => {
 // });
 
 // ---------- 會員登入 ---------- //
-router.post("/login", async (req, res) => {
+const verifyToken = (req, res, next) => {
+  let token;
+  try {
+    token = req.headers["authorization"].split(" ")[1];
+  } catch (err) {
+    console.log("err", err);
+    token = "";
+  }
+  if (token) {
+    jwt.verify(token, process.env.SECRET, (err, decoded) => {
+      if (err) {
+        res.status(401).json({
+          status: false,
+          message: "token驗證失敗",
+        });
+      } else {
+        return res.status(200).json({ status: true, message: "登入成功" });
+      }
+    });
+  }
+  if (!token) {
+    next();
+  }
+};
+
+router.post("/login", verifyToken, async (req, res) => {
   try {
     const { account, password } = req.body;
     const user = await db.query(
       `SELECT * FROM member_list WHERE account=${account}`
     );
     if (!user[0].length) {
-      res.status(404).json({ status: false, message: "帳號密碼錯誤" });
-      return;
+      return res.status(404).json({ status: false, message: "帳號密碼錯誤" });
     }
     if (user[0][0].password !== password) {
-      res.status(403).json({ status: false, message: "密碼錯誤" });
-      return;
+      return res.status(403).json({ status: false, message: "密碼錯誤" });
     }
     const token = jwt.sign({ account, password }, process.env.SECRET);
     res
       .status(200)
-      .json({ status: true, message: "登入失敗", accessToken: token });
+      .json({ status: true, message: "登入成功", accessToken: token });
   } catch (err) {
     console.log("err", err);
     res.status(500).json({ status: false, message: "登入失敗" });
