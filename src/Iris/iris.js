@@ -221,6 +221,7 @@ const verifyToken = (req, res, next) => {
     token = "";
   }
   if (token) {
+    console.log("token", token);
     jwt.verify(token, process.env.SECRET, (err, decoded) => {
       if (err) {
         res.status(401).json({
@@ -250,9 +251,13 @@ router.post("/login", verifyToken, async (req, res) => {
       return res.status(403).json({ status: false, message: "密碼錯誤" });
     }
     const token = jwt.sign({ account, password }, process.env.SECRET);
-    res
-      .status(200)
-      .json({ status: true, message: "登入成功", accessToken: token });
+    console.log("user[0][0].member_sid", user[0][0].member_sid);
+    res.status(200).json({
+      status: true,
+      message: "登入成功",
+      currentUser: user[0][0].member_sid,
+      accessToken: token,
+    });
   } catch (err) {
     console.log("err", err);
     res.status(500).json({ status: false, message: "登入失敗" });
