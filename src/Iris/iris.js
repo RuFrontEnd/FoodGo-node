@@ -178,29 +178,34 @@ router.post("/userRegister", async (req, res) => {
   });
 
   if (unPassTimes === 0) {
-    res.json(newRegister);
+    res.status(201).json(newRegister);
   } else {
-    res.json({ message: "註冊失敗" });
+    res.status(400).json({ message: "註冊失敗", err: "帳號已被使用" });
   }
 });
 
 // ---------- 會員登入後的token是否存在 ---------- //
 
-// router.get("/isUserAuth", (req, res) => {
-//   const token = req.headers["x-access-token"];
-//   if (!token) {
+// router.post("/isUserAuth", (req, res) => {
+//   const token = req.body;
+//   console.log(token);
+//   if (!token.accessToken) {
 //     res.send("need token");
 //   }
-//   if (token) {
-//     jwt.verify(token, process.env.SECRET, (err, decoded) => {
+//   if (token.accessToken) {
+//     jwt.verify(token.accessToken, process.env.SECRET, (err, decoded) => {
 //       if (err) {
 //         res.json({
 //           status: false,
 //           message: "登入失敗",
 //         });
-//       }else{
-//         req.userId = decoded.id
-//         next()
+//       } else {
+//         res.json({
+//           status: true,
+//           message: "登入成功",
+//           // currentUser: memberSid,
+//           // accessToken: token,
+//         });
 //       }
 //     });
 //   }
@@ -208,62 +213,87 @@ router.post("/userRegister", async (req, res) => {
 
 // ---------- 會員登入 ---------- //
 router.post("/login", async (req, res) => {
-  const profile = req.body;
-  let isRegistered = false;
-  let memberSid = 0;
-
-  await db.query("SELECT * FROM member_list").then((res) => {
-    let comparisons = [];
-
-    res[0].forEach((row) => {
-      const _comparisons = {
-        member_sid: row.member_sid,
-        account: row.account,
-        password: row.password,
-      };
-      comparisons.push(_comparisons);
-    });
-
-    const _isRegistered = comparisons.some(
-      (comparison) =>
-        comparison.account === profile.account &&
-        comparison.password === profile.password
+  try {
+    const { account, password } = req.body;
+    const user = await db.query(
+      `SELECT * FROM member_list WHERE account=${account}`
     );
-
-    const _memberSid = comparisons.filter(
-      (comparison) =>
-        comparison.account === profile.account &&
-        comparison.password === profile.password
-    );
-
-    isRegistered = _isRegistered;
-    memberSid = _memberSid[0].member_sid;
-  });
-
-  if (isRegistered) {
-    const token = jwt.sign(
-      {
-        algorithm: "HS256", // 加密演算方式
-        exp: Math.floor(Date.now() / 1000) + 60, // token存活時間(一分鐘)
-        data: memberSid, // 會員id
-      },
-      process.env.SECRET
-    );
-    res.json({
-      status: true,
-      message: "登入成功",
-      currentUser: memberSid,
-      accessToken: token,
-    });
-  }
-
-  if (!isRegistered) {
-    res.json({
-      status: false,
-      message: "登入失敗",
-    });
+    if (!user[0].length) {
+      res.status(404).json({ status: false, message: "帳號密碼錯誤" });
+      return;
+    }
+    if (user[0][0].password !== password) {
+      res.status(403).json({ status: false, message: "密碼錯誤" });
+      return;
+    }
+    const token = jwt.sign({ account, password }, process.env.SECRET);
+    res
+      .status(200)
+      .json({ status: true, message: "登入失敗", accessToken: token });
+  } catch (err) {
+    console.log("err", err);
+    res.status(500).json({ status: false, message: "登入失敗" });
   }
 });
+
+// ---------- 會員登入(備份) ---------- //
+// router.post("/login", async (req, res) => {
+//   const profile = req.body;
+//   let isRegistered = false;
+//   let memberSid = 0;
+
+//   await db.query("SELECT * FROM member_list").then((res) => {
+//     let comparisons = [];
+
+//     res[0].forEach((row) => {
+//       const _comparisons = {
+//         member_sid: row.member_sid,
+//         account: row.account,
+//         password: row.password,
+//       };
+//       comparisons.push(_comparisons);
+//     });
+
+//     const _isRegistered = comparisons.some(
+//       (comparison) =>
+//         comparison.account === profile.account &&
+//         comparison.password === profile.password
+//     );
+
+//     const _memberSid = comparisons.filter(
+//       (comparison) =>
+//         comparison.account === profile.account &&
+//         comparison.password === profile.password
+//     );
+
+//     isRegistered = _isRegistered;
+//     memberSid = _memberSid[0].member_sid;
+//   });
+
+//   if (isRegistered) {
+//     const token = jwt.sign(
+//       {
+//         algorithm: "HS256", // 加密演算方式
+//         // exp: Math.floor(Date.now() / 1000) + 60, // token存活時間(一分鐘)
+//         data: memberSid, // 會員id
+//       },
+//       process.env.SECRET
+//     );
+//     res.json({
+//       status: true,
+//       message: "登入成功",
+//       currentUser: memberSid,
+//       accessToken: token,
+//     });
+//   }
+
+//   if (!isRegistered) {
+//     res.json({
+//       status: false,
+//       message: "登入失敗",
+//     });
+//   }
+// });
 
 // ---------- 更新會員資料 ---------- //
 router.post("/updateProfile", (req, res) => {
