@@ -66,15 +66,15 @@ router.get("/couponStatus", (req, res) => {
 
 // ---------- 新增優惠券領取狀態 ---------- //
 router.post("/addCouponStatus", (req, res) => {
-  const newUserSid = req.body;
+  // const newUserSid = req.body;
 
-  const sql =
-    "INSERT INTO `coupon_status` set `member_sid`='" +
-    newUserSid.currentUser +
-    "'";
+  // const sql =
+  //   "INSERT INTO `coupon_status` set `member_sid`='" +
+  //   newUserSid.currentUser +
+  //   "'";
 
-  db.query(sql);
-  res.json(newUserSid);
+  // db.query(sql);
+  // res.json(newUserSid);
 });
 
 // ---------- 新增優惠券  ---------- //
