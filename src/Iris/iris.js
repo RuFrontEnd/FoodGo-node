@@ -3,6 +3,7 @@ const express = require("express");
 const db = require(__dirname + "/../db_connect");
 const session = require("express-session");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 
 //引入router
 const router = express.Router();
@@ -67,12 +68,10 @@ router.get("/couponStatus", (req, res) => {
 // ---------- 新增優惠券領取狀態 ---------- //
 router.post("/addCouponStatus", (req, res) => {
   // const newUserSid = req.body;
-
   // const sql =
   //   "INSERT INTO `coupon_status` set `member_sid`='" +
   //   newUserSid.currentUser +
   //   "'";
-
   // db.query(sql);
   // res.json(newUserSid);
 });
@@ -160,20 +159,59 @@ router.post("/userRegister", async (req, res) => {
 
     comparisons.forEach((comparison) => {
       unPassTimes += comparison.account === newRegister.account ? 1 : 0;
-    });
+    }); // 比對是否註冊過
 
-    if (unPassTimes === 0) {
-      const sql =
-        "INSERT INTO `member_list`( `account`, `password`,`mobile`, `email`) VALUES ('" +
-        newRegister.account +
-        "','" +
-        newRegister.password +
-        "','" +
-        newRegister.mobile +
-        "','" +
-        newRegister.email +
-        "')";
-      db.query(sql);
+    try {
+      const confirmationCode = jwt.sign(
+        { email: req.body.email },
+        process.env.MAIL_SECRET
+      );
+
+      if (unPassTimes === 0) {
+        const sql =
+          "INSERT INTO `member_list`( `account`, `password`,`mobile`, `email`, `isVerified`, `confirmation_code`) VALUES ('" +
+          newRegister.account +
+          "','" +
+          newRegister.password +
+          "','" +
+          newRegister.mobile +
+          "','" +
+          newRegister.email +
+          "','" +
+          0 +
+          "','" +
+          confirmationCode +
+          "')";
+        db.query(sql);
+
+        // 寄驗證信
+        // Gmail 低安全權限 https://myaccount.google.com/lesssecureapps?pli=1&rapt=AEjHL4OM-QK8H1OSKff6qljwuPfefw4yHESqLneeBQel7Ykbv5U3m7hEvUbQ2jwQNmmfkF9tt3LjKHVYEgd9hnbYRa7bSss56Q
+        const transport = nodemailer.createTransport({
+          host: "smtp.ethereal.email",
+          port: 587,
+          secure: false, // true for 465, false for other ports
+          service: "Gmail",
+          auth: {
+            user: process.env.EMAILACCOUNT,
+            pass: process.env.EMIALPASSWORD,
+          },
+        });
+
+        transport
+          .sendMail({
+            from: process.env.EMAILACCOUNT,
+            to: newRegister.email,
+            subject: "Please confirm your account",
+            html: `<h1>Email Confirmation</h1>
+              <h2>Hello ${newRegister.account}</h2>
+              <p>Thank you for subscribing. Please confirm your email by clicking on the following link</p>
+              <a href=http://localhost:5000/member/verifyEmail?confirmationCode=${confirmationCode}> Click here</a>
+              </div>`,
+          })
+          .catch((err) => console.log("sendMail ERR", err));
+      }
+    } catch (error) {
+      console.log("register error", error);
     }
   });
 
@@ -184,32 +222,27 @@ router.post("/userRegister", async (req, res) => {
   }
 });
 
-// ---------- 會員登入後的token是否存在 ---------- //
+// ---------- 驗證信箱 ---------- //
+router.get("/verifyEmail", async (req, res) => {
+  const confirmationCode = await req.query.confirmationCode;
+  await jwt.verify(
+    confirmationCode,
+    process.env.MAIL_SECRET,
+    (err, decoded) => {
+      if (err) {
+        return res.status(401).json({
+          status: false,
+          message: "mail token驗證失敗",
+        });
+      } else {
+        const sql = `UPDATE \`member_list\` SET \`confirmation_code\` = '', \`isVerified\`= 1 WHERE \`confirmation_code\`='${confirmationCode}'`;
+        db.query(sql); // 將信箱驗證狀態改為true(1), 並取消confirmation_code
 
-// router.post("/isUserAuth", (req, res) => {
-//   const token = req.body;
-//   console.log(token);
-//   if (!token.accessToken) {
-//     res.send("need token");
-//   }
-//   if (token.accessToken) {
-//     jwt.verify(token.accessToken, process.env.SECRET, (err, decoded) => {
-//       if (err) {
-//         res.json({
-//           status: false,
-//           message: "登入失敗",
-//         });
-//       } else {
-//         res.json({
-//           status: true,
-//           message: "登入成功",
-//           // currentUser: memberSid,
-//           // accessToken: token,
-//         });
-//       }
-//     });
-//   }
-// });
+        return res.redirect("http://localhost:3300"); // ***之後改成驗證成功畫面***
+      }
+    }
+  );
+});
 
 // ---------- 會員登入 ---------- //
 const verifyToken = (req, res, next) => {
@@ -236,14 +269,21 @@ const verifyToken = (req, res, next) => {
   if (!token) {
     next();
   }
-};
+}; // 判斷是否有Token
 
 router.post("/login", verifyToken, async (req, res) => {
   try {
     const { account, password } = req.body;
+
     const user = await db.query(
       `SELECT * FROM member_list WHERE account=${account}`
     );
+    if (!user.isVerified) {
+      return res.status(401).json({
+        status: false,
+        message: "帳號尚未驗證",
+      });
+    }
     if (!user[0].length) {
       return res.status(404).json({ status: false, message: "帳號密碼錯誤" });
     }
@@ -251,7 +291,6 @@ router.post("/login", verifyToken, async (req, res) => {
       return res.status(403).json({ status: false, message: "密碼錯誤" });
     }
     const token = jwt.sign({ account, password }, process.env.SECRET);
-    console.log("user[0][0].member_sid", user[0][0].member_sid);
     res.status(200).json({
       status: true,
       message: "登入成功",
@@ -326,6 +365,7 @@ router.post("/login", verifyToken, async (req, res) => {
 // ---------- 更新會員資料 ---------- //
 router.post("/updateProfile", (req, res) => {
   const newProfile = req.body;
+  console.log("newProfile", newProfile);
   const fulladdress = "" + req.body.address;
   const county = fulladdress.slice(0, 3);
   const district = fulladdress.slice(3, 6);
@@ -337,8 +377,6 @@ router.post("/updateProfile", (req, res) => {
     "',`name`='" +
     newProfile.familyname +
     newProfile.givenname +
-    "',`birthday`='" +
-    newProfile.birthday +
     "',`mobile`='" +
     newProfile.mobile +
     "',`email`='" +
