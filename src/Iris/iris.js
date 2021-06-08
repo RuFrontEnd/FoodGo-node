@@ -278,7 +278,10 @@ router.post("/login", verifyToken, async (req, res) => {
     const user = await db.query(
       `SELECT * FROM member_list WHERE account=${account}`
     );
-    if (!user.isVerified) {
+
+    console.log("user.isVerified", user[0][0].isVerified);
+
+    if (user[0][0].isVerified === 0) {
       return res.status(401).json({
         status: false,
         message: "帳號尚未驗證",
