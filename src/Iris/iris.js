@@ -250,7 +250,7 @@ const verifyToken = (req, res, next) => {
   try {
     token = req.headers["authorization"].split(" ")[1];
   } catch (err) {
-    console.log("err", err);
+    console.log("抓取token錯誤, token設為空字串", err);
     token = "";
   }
   if (token) {
@@ -276,7 +276,7 @@ router.post("/login", verifyToken, async (req, res) => {
     const { account, password } = req.body;
 
     const user = await db.query(
-      `SELECT * FROM member_list WHERE account=${account}`
+      `SELECT * FROM member_list WHERE account='${account}'`
     );
 
     console.log("user.isVerified", user[0][0].isVerified);
@@ -301,69 +301,10 @@ router.post("/login", verifyToken, async (req, res) => {
       accessToken: token,
     });
   } catch (err) {
-    console.log("err", err);
+    console.log("登入程序錯誤", err);
     res.status(500).json({ status: false, message: "登入失敗" });
   }
 });
-
-// ---------- 會員登入(備份) ---------- //
-// router.post("/login", async (req, res) => {
-//   const profile = req.body;
-//   let isRegistered = false;
-//   let memberSid = 0;
-
-//   await db.query("SELECT * FROM member_list").then((res) => {
-//     let comparisons = [];
-
-//     res[0].forEach((row) => {
-//       const _comparisons = {
-//         member_sid: row.member_sid,
-//         account: row.account,
-//         password: row.password,
-//       };
-//       comparisons.push(_comparisons);
-//     });
-
-//     const _isRegistered = comparisons.some(
-//       (comparison) =>
-//         comparison.account === profile.account &&
-//         comparison.password === profile.password
-//     );
-
-//     const _memberSid = comparisons.filter(
-//       (comparison) =>
-//         comparison.account === profile.account &&
-//         comparison.password === profile.password
-//     );
-
-//     isRegistered = _isRegistered;
-//     memberSid = _memberSid[0].member_sid;
-//   });
-
-//   if (isRegistered) {
-//     const token = jwt.sign(
-//       {
-//         algorithm: "HS256", // 加密演算方式
-//         // exp: Math.floor(Date.now() / 1000) + 60, // token存活時間(一分鐘)
-//         data: memberSid, // 會員id
-//       },
-//       process.env.SECRET
-//     );
-//     res.json({
-//       status: true,
-//       message: "登入成功",
-//       currentUser: memberSid,
-//       accessToken: token,
-//     });
-//   }
-
-//   if (!isRegistered) {
-//     res.json({
-//       status: false,
-//       message: "登入失敗",
-//     });
-//   }
-// });
 
 // ---------- 更新會員資料 ---------- //
 router.post("/updateProfile", (req, res) => {
