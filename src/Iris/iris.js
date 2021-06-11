@@ -314,9 +314,8 @@ router.post("/loginVerify", async (req, res) => {
       `SELECT * FROM member_list WHERE member_sid='${currentUser}'`
     );
 
-    // 驗證token
     try {
-      token = req.headers["Authorization"].split(" ")[1];
+      token = req.headers["authorization"].split(" ")[1];
     } catch (err) {
       console.log("抓取token錯誤, token設為false", err);
       token = false;
