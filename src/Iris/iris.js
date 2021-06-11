@@ -245,41 +245,40 @@ router.get("/verifyEmail", async (req, res) => {
 });
 
 // ---------- 會員登入 ---------- //
-const verifyToken = (req, res, next) => {
-  let token;
-  try {
-    token = req.headers["authorization"].split(" ")[1];
-  } catch (err) {
-    console.log("抓取token錯誤, token設為空字串", err);
-    token = "";
-  }
-  if (token) {
-    console.log("token", token);
-    jwt.verify(token, process.env.SECRET, (err, decoded) => {
-      if (err) {
-        res.status(401).json({
-          status: false,
-          message: "token驗證失敗",
-        });
-      } else {
-        return res.status(200).json({ status: true, message: "登入成功" });
-      }
-    });
-  }
-  if (!token) {
-    next();
-  }
-}; // 判斷是否有Token
+// const verifyToken = (req, res, next) => {
+//   let token;
+//   console.log("req", req);
+//   try {
+//     token = req.headers["authorization"].split(" ")[1];
+//   } catch (err) {
+//     console.log("抓取token錯誤, token設為空字串", err);
+//     token = "";
+//   }
+//   if (token) {
+//     console.log("token", token);
+//     jwt.verify(token, process.env.SECRET, (err, decoded) => {
+//       if (err) {
+//         res.status(401).json({
+//           status: false,
+//           message: "token驗證失敗",
+//         });
+//       } else {
+//         return res.status(200).json({ status: true, message: "登入成功" });
+//       }
+//     });
+//   }
+//   if (!token) {
+//     next();
+//   }
+// }; // 判斷是否有Token
 
-router.post("/login", verifyToken, async (req, res) => {
+router.post("/login", async (req, res) => {
   try {
     const { account, password } = req.body;
-
+    console.log("req.body", req.body);
     const user = await db.query(
       `SELECT * FROM member_list WHERE account='${account}'`
     );
-
-    console.log("user.isVerified", user[0][0].isVerified);
 
     if (user[0][0].isVerified === 0) {
       return res.status(401).json({
@@ -298,8 +297,54 @@ router.post("/login", verifyToken, async (req, res) => {
       status: true,
       message: "登入成功",
       currentUser: user[0][0].member_sid,
+      currentUserData: user[0][0],
       accessToken: token,
     });
+  } catch (err) {
+    console.log("登入程序錯誤", err);
+    res.status(500).json({ status: false, message: "登入失敗" });
+  }
+});
+
+router.post("/loginVerify", async (req, res) => {
+  try {
+    const { currentUser } = req.body;
+    let token;
+    const user = await db.query(
+      `SELECT * FROM member_list WHERE member_sid='${currentUser}'`
+    );
+
+    // 驗證token
+    try {
+      token = req.headers["Authorization"].split(" ")[1];
+    } catch (err) {
+      console.log("抓取token錯誤, token設為false", err);
+      token = false;
+    } finally {
+      if (token) {
+        jwt.verify(token, process.env.SECRET, (err, decoded) => {
+          if (err) {
+            return res.status(401).json({
+              status: false,
+              message: "token驗證失敗",
+            });
+          } else {
+            return res.status(200).json({
+              status: true,
+              message: "登入成功",
+              currentUser: user[0][0].member_sid,
+              currentUserData: user[0][0],
+            });
+          }
+        });
+      }
+      if (!token) {
+        return res.status(401).json({
+          status: false,
+          message: "無token驗證",
+        });
+      }
+    }
   } catch (err) {
     console.log("登入程序錯誤", err);
     res.status(500).json({ status: false, message: "登入失敗" });
