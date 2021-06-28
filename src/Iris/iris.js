@@ -218,7 +218,10 @@ router.post("/userRegister", async (req, res) => {
   if (unPassTimes === 0) {
     res.status(201).json(newRegister);
   } else {
-    res.status(400).json({ message: "註冊失敗", err: "帳號已被使用" });
+    res.status(400).json({
+      status: false,
+      message: "註冊失敗，帳號已被使用",
+    });
   }
 });
 
