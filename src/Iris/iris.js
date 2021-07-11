@@ -374,18 +374,18 @@ router.post("/loginVerify", async (req, res) => {
 // ---------- 更新會員資料 ---------- //
 router.post("/updateProfile", (req, res) => {
   const newProfile = req.body;
+  console.log("newProfile", newProfile);
   // console.log("newProfile", newProfile);
   const fulladdress = "" + req.body.address;
-  const county = fulladdress.slice(0, 3);
-  const district = fulladdress.slice(3, 6);
-  const address = fulladdress.slice(6);
+  const county = fulladdress.slice(0, 3); // 縣市
+  const district = fulladdress.slice(3, 6); // 區
+  const address = fulladdress.slice(6); // 細部地址
 
   const sql =
     "UPDATE `member_list` SET `password`='" +
     newProfile.password +
     "',`name`='" +
-    newProfile.familyname +
-    newProfile.givenname +
+    newProfile.name +
     "',`mobile`='" +
     newProfile.mobile +
     "',`email`='" +
