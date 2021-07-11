@@ -108,11 +108,21 @@ router.post("/changeCouponStatus", (req, res) => {
   res.json(statusChanged);
 });
 
-// ------- 取得會員資料(登入,修改頁面) ------- //
+// ------- 取得全部會員資料(登入,修改頁面) ------- //
 router.get("/allUserProfile", (req, res) => {
   db.query("SELECT * FROM member_list").then(([results, fields]) => {
     res.json(results);
   });
+});
+
+// ------- 取得單一會員資料(登入,修改頁面) ------- //
+router.get("/singleUserProfile", (req, res) => {
+  const userSid = req.sid;
+  db.query(`SELECT * FROM member_list WHERE sid= ${userSid}`).then(
+    ([results, fields]) => {
+      res.json(results);
+    }
+  );
 });
 
 // ---------- 新增最愛 ---------- //
