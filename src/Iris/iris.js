@@ -117,8 +117,9 @@ router.get("/allUserProfile", (req, res) => {
 
 // ------- 取得單一會員資料(登入,修改頁面) ------- //
 router.get("/singleUserProfile", (req, res) => {
-  const userSid = req.sid;
-  db.query(`SELECT * FROM member_list WHERE sid= ${userSid}`).then(
+  const member_sid = req.query.member_sid;
+  console.log(member_sid);
+  db.query(`SELECT * FROM member_list WHERE member_sid=${member_sid}`).then(
     ([results, fields]) => {
       res.json(results);
     }
@@ -288,7 +289,7 @@ router.get("/verifyEmail", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { account, password } = req.body;
-    console.log("req.body", req.body);
+    // console.log("req.body", req.body);
     const user = await db.query(
       `SELECT * FROM member_list WHERE account='${account}'`
     );
@@ -366,7 +367,7 @@ router.post("/loginVerify", async (req, res) => {
 // ---------- 更新會員資料 ---------- //
 router.post("/updateProfile", (req, res) => {
   const newProfile = req.body;
-  console.log("newProfile", newProfile);
+  // console.log("newProfile", newProfile);
   const fulladdress = "" + req.body.address;
   const county = fulladdress.slice(0, 3);
   const district = fulladdress.slice(3, 6);
