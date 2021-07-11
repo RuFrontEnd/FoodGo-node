@@ -227,7 +227,13 @@ router.post("/userRegister", async (req, res) => {
   });
 
   if (unPassTimes === 0) {
-    res.status(201).json(newRegister);
+    res
+      .status(201)
+      .json({
+        status: true,
+        message: "註冊成功",
+        ...newRegister,
+      });
   } else {
     res.status(400).json({
       status: false,
