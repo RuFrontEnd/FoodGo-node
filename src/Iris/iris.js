@@ -157,6 +157,7 @@ router.post("/deleteMyFav", (req, res) => {
 // ---------- 會員註冊 ---------- //
 router.post("/userRegister", async (req, res) => {
   const newRegister = req.body;
+  console.log("newRegister", newRegister);
   let unPassTimes = 0;
 
   await db.query("SELECT * FROM member_list").then((res) => {
@@ -180,10 +181,12 @@ router.post("/userRegister", async (req, res) => {
 
       if (unPassTimes === 0) {
         const sql =
-          "INSERT INTO `member_list`( `account`, `password`,`mobile`, `email`, `isVerified`, `confirmation_code`) VALUES ('" +
+          "INSERT INTO `member_list`( `account`, `password`, `name`, `mobile`, `email`, `isVerified`, `confirmation_code`) VALUES ('" +
           newRegister.account +
           "','" +
           newRegister.password +
+          "','" +
+          newRegister.name +
           "','" +
           newRegister.mobile +
           "','" +
@@ -227,13 +230,11 @@ router.post("/userRegister", async (req, res) => {
   });
 
   if (unPassTimes === 0) {
-    res
-      .status(201)
-      .json({
-        status: true,
-        message: "註冊成功",
-        ...newRegister,
-      });
+    res.status(201).json({
+      status: true,
+      message: "註冊成功",
+      ...newRegister,
+    });
   } else {
     res.status(400).json({
       status: false,
