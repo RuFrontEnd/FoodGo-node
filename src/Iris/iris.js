@@ -49,7 +49,6 @@ router.get("/myFavList", (req, res) => {
   // INNER JOIN 比對 表1表2
   db.query(
     `SELECT * FROM \`my_fav\` INNER JOIN \`product\` ON \`my_fav\`.\`product_sid\`=\`product\`.\`sid\` WHERE \`member_sid\`='${member_sid}' `
-    // INNER JOIN \`product\` ON \`my_fav\`.\`product_sid\`=\`product\`.\`sid\`
   ).then(([results, fields]) => {
     res.json(results);
   });
