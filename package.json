@@ -2,7 +2,7 @@
   "name": "mfee09-node",
   "version": "1.0.0",
   "description": "",
-  "main": "src/server.js",
+  "main": "server.js",
   "scripts": {
     "start": "nodemon src/server.js",
     "bn": "nodemon --exec babel-node src/server.js",
