@@ -52,5 +52,5 @@ jobs:
       with:
         app-name: 'FoodGo-node'
         slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_63d2a9338506446189e09e7537a17f8e }}
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_e2b54b83200f4a918e188383c659e406 }}
         package: .
