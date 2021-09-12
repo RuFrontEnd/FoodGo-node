@@ -3,6 +3,7 @@ const multer = require("multer");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const app = express();
+const port = process.env.PORT || 5000;
 const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const session = require("express-session");
@@ -66,6 +67,6 @@ app.use("/product", require(__dirname + "/Jess/jess"));
 app.use("/product", require(__dirname + "/Ru/ru"));
 
 // Server
-app.listen(5000, () => {
+app.listen(port, () => {
   console.log("伺服器已啟動");
 });
