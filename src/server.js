@@ -35,7 +35,7 @@ app.get("/try-db", (req, res) => {
   });
 });
 
-app.use(express.static(__dirname + "/../public"));
+app.use(express.static(__dirname + "/../public")); // 設定靜態檔案路徑
 
 //範例
 app.use("/example", require(__dirname + "/Name/example"));
@@ -49,19 +49,19 @@ app.post("/try-post", parser, (req, res) => {
 //引入的檔案裡面一定要有東西，不然會報錯，所以先註解掉
 
 //Cha
-app.use("/cart-api", require(__dirname + "/Cha/cha"));
+// app.use("/cart-api", require(__dirname + "/Cha/cha"));
 
-// Claudia
-app.use("/farm", require(__dirname + "/Claudia/test"));
+// // Claudia
+// app.use("/farm", require(__dirname + "/Claudia/test"));
 
-// Iris
-app.use("/member", require(__dirname + "/Iris/iris"));
+// // Iris
+// app.use("/member", require(__dirname + "/Iris/iris"));
 
-//Janice
-app.use("/index", require(__dirname + "/Janice/janice"));
+// //Janice
+// app.use("/index", require(__dirname + "/Janice/janice"));
 
-//Jess 商品
-app.use("/product", require(__dirname + "/Jess/jess"));
+// //Jess 商品
+// app.use("/product", require(__dirname + "/Jess/jess"));
 
 //Ru
 app.use("/product", require(__dirname + "/Ru/ru"));
