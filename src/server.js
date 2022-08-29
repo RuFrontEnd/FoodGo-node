@@ -13,6 +13,7 @@ const cors = require("cors");
 const db = require(__dirname + "/db_connect");
 const sessionStore = new MysqlStore({}, db);
 const upload = multer({ dest: __dirname + "/../tmp_uploads" });
+const SocketServer = require("ws").Server;
 
 // 處理表單資料的body-parser
 app.use(express.urlencoded({ extended: false }));
@@ -67,6 +68,32 @@ app.post("/try-post", parser, (req, res) => {
 app.use("/product", require(__dirname + "/Ru/ru"));
 
 // Server
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log("伺服器已啟動");
+});
+
+const wss = new SocketServer({ server });
+
+wss.on("connection", (ws) => {
+  console.log("ws", ws.clients);
+  //連結時執行此 console 提示
+  console.log("Client connected");
+
+  //固定送最新時間給 Client
+  const sendNowTime = setInterval(() => {
+    // ws.send(String(new Date()));
+  }, 1000);
+
+  //對 message 設定監聽，接收從 Client 發送的訊息
+  ws.on("message", (data) => {
+    console.log("Buffer.from(data)", Buffer.from(data, "utf8"));
+    //data 為 Client 發送的訊息，現在將訊息原封不動發送出去
+    ws.send(data);
+  });
+
+  //當 WebSocket 的連線關閉時執行
+  ws.on("close", () => {
+    clearInterval(sendNowTime);
+    console.log("Close connected");
+  });
 });
