@@ -14,6 +14,7 @@ const db = require(__dirname + "/db_connect");
 const sessionStore = new MysqlStore({}, db);
 const upload = multer({ dest: __dirname + "/../tmp_uploads" });
 const SocketServer = require("ws").Server;
+const router = express.Router();
 
 // 處理表單資料的body-parser
 app.use(express.urlencoded({ extended: false }));
@@ -72,10 +73,9 @@ const server = app.listen(port, () => {
   console.log("伺服器已啟動");
 });
 
-const wss = new SocketServer({ server });
+const wss = new SocketServer({ server: server });
 
 wss.on("connection", (ws) => {
-  // console.log("clients", clients);
   //連結時執行此 console 提示
   console.log("Client connected");
 
@@ -87,15 +87,71 @@ wss.on("connection", (ws) => {
   }, 1000);
 
   //對 message 設定監聽，接收從 Client 發送的訊息
-  ws.on("message", (data) => {
+  ws.on("message", async (clientData) => {
+    const data = JSON.parse(clientData);
+
+    switch (data.path) {
+      case "/custom_list":
+        console.log("data", data);
+        try {
+          let sql = "";
+          sql =
+            "INSERT INTO `foodgo`.`order_list` (`vice`, `main`, `side1`, `side2`, `side3`, `egg`) VALUES (?, ?, ?, ?, ?, ?)";
+
+          await db.execute(sql, [
+            data.body.vice,
+            data.body.main,
+            data.body.side1,
+            data.body.side2,
+            data.body.side3,
+            data.body.egg,
+          ]);
+
+          sql = "SELECT * FROM foodgo.order_list;";
+
+          const orders = await db.execute(sql);
+          console.log("orders", orders);
+
+          clients.forEach((client) => {
+            client.send(
+              JSON.stringify({ message: orders[0], pathname: "/admin" })
+            );
+          });
+        } catch (error) {
+          console.log("error", error);
+        }
+        // try {
+        //     let sql =
+        //       "INSERT INTO `foodgo`.`order_list` (`vice`, `main`, `side1`, `side2`, `side3`, `egg`) VALUES (?, ?, ?, ?, ?, ?)";
+        //     await db.execute(sql, [
+        //       req.body.vice,
+        //       req.body.main,
+        //       req.body.side1,
+        //       req.body.side2,
+        //       req.body.side3,
+        //       req.body.egg,
+        //     ]);
+
+        //     return res.status(200).json({
+        //       ok: true,
+        //     });
+        //   } catch (err) {
+        //     console.log("err", err);
+        //     return res.status(400).json({
+        //       ok: false,
+        //       error: "MySQL error.",
+        //     });
+        //   }
+        break;
+    }
     // console.log("Buffer.from(data)", Buffer.from(data, "utf8"));
     // console.log("clients", clients);
 
-    clients.forEach((client) => {
-      client.send(
-        JSON.stringify({ message: data.toString(), pathname: "/admin" })
-      );
-    });
+    // clients.forEach((client) => {
+    //   client.send(
+    //     JSON.stringify({ message: data.toString(), pathname: "/admin" })
+    //   );
+    // });
     ws.send(data.toString());
   });
 
