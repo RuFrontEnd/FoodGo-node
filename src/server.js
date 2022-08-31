@@ -75,9 +75,11 @@ const server = app.listen(port, () => {
 const wss = new SocketServer({ server });
 
 wss.on("connection", (ws) => {
-  console.log("ws", ws.clients);
+  // console.log("clients", clients);
   //連結時執行此 console 提示
   console.log("Client connected");
+
+  let clients = wss.clients;
 
   //固定送最新時間給 Client
   const sendNowTime = setInterval(() => {
@@ -86,14 +88,21 @@ wss.on("connection", (ws) => {
 
   //對 message 設定監聽，接收從 Client 發送的訊息
   ws.on("message", (data) => {
-    console.log("Buffer.from(data)", Buffer.from(data, "utf8"));
-    //data 為 Client 發送的訊息，現在將訊息原封不動發送出去
-    ws.send(data);
+    // console.log("Buffer.from(data)", Buffer.from(data, "utf8"));
+    // console.log("clients", clients);
+
+    clients.forEach((client) => {
+      client.send(
+        JSON.stringify({ message: data.toString(), pathname: "/admin" })
+      );
+    });
+    ws.send(data.toString());
   });
 
   //當 WebSocket 的連線關閉時執行
   ws.on("close", () => {
     clearInterval(sendNowTime);
-    console.log("Close connected");
+    // console.log("Close connected");
+    // console.log("clients", clients);
   });
 });
