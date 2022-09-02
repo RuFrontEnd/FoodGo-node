@@ -10,6 +10,12 @@ router.get("/custom_list", (req, res) => {
   });
 });
 
+router.get("/order_list", (req, res) => {
+  db.query("SELECT * FROM order_list").then(([results]) => {
+    res.json(results);
+  });
+});
+
 // router.post("/custom_list", async (req, res) => {
 //   // 下SQL語法求取資料
 //   console.log("req.body", req.body);

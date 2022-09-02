@@ -96,7 +96,7 @@ wss.on("connection", (ws) => {
         try {
           let sql = "";
           sql =
-            "INSERT INTO `foodgo`.`order_list` (`vice`, `main`, `side1`, `side2`, `side3`, `egg`) VALUES (?, ?, ?, ?, ?, ?)";
+            "INSERT INTO `foodgo`.`order_list` (`vice`, `main`, `side1`, `side2`, `side3`, `egg`, `count`) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
           await db.execute(sql, [
             data.body.vice,
@@ -105,6 +105,7 @@ wss.on("connection", (ws) => {
             data.body.side2,
             data.body.side3,
             data.body.egg,
+            data.body.count,
           ]);
 
           sql = "SELECT * FROM foodgo.order_list;";
